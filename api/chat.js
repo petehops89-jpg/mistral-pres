@@ -1,0 +1,56 @@
+export default async function handler(req, res) {
+  // Only allow POST
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const apiKey = process.env.MISTRAL_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: 'MISTRAL_API_KEY not set in environment variables' });
+  }
+
+  try {
+    const { system, messages } = req.body;
+
+    // Build messages array — Mistral uses system as first message with role 'system'
+    const mistralMessages = [
+      { role: 'system', content: system },
+      ...messages
+    ];
+
+    const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'mistral-large-latest',
+        max_tokens: 4000,
+        temperature: 0.7,
+        messages: mistralMessages
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return res.status(response.status).json({ error: data.message || 'Mistral API error' });
+    }
+
+    // Extract JSON robustly from Mistral response
+    let content = data.choices?.[0]?.message?.content || '';
+    // Strip markdown fences
+    content = content.replace(/```json|```/g, '').trim();
+    // Extract first { to last } to strip any preamble
+    const start = content.indexOf('{');
+    const end = content.lastIndexOf('}');
+    if (start !== -1 && end !== -1) {
+      content = content.slice(start, end + 1);
+    }
+    return res.status(200).json({ content });
+
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+}
