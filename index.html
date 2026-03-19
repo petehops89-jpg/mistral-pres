@@ -311,6 +311,7 @@ body::after {
 }
 .btn-export:hover { opacity: 0.85; }
 .btn-export-pdf { background: #ff3f3f; color: #fff; }
+.btn-export-email { background: #3d8eff; color: #fff; }
 
 /* DUAL IMAGE CARD */
 .card-dual-image .card-inner {
@@ -653,7 +654,7 @@ When the user's prompt mentions a specific image number, create an "image" type 
 You can also use "split_image" type for a card that combines text and an image side by side.`;
     }
 
-    const res = await fetch('/api/chat', {
+    const res = await fetch('/api/vercel', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
@@ -688,7 +689,8 @@ function renderDeck() {
   document.getElementById('nav-right').innerHTML = `
     <button class="btn-ghost" onclick="newDeck()">← New deck</button>
     <button class="btn-export" onclick="exportHTML()">↓ HTML</button>
-    <button class="btn-export btn-export-pdf" onclick="exportPDF()">↓ PDF</button>`;
+    <button class="btn-export btn-export-email" onclick="emailDeck()">✉ Email</button>
+    <button class="btn-export btn-export-email" onclick="emailHTML()">✉ Embed</button>`;
 
   deckData.slides.forEach((slide, i) => {
     const pal = P(i);
@@ -890,6 +892,112 @@ function exportHTML() {
   a.click();
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ── Email Deck (simple mailto) ──
+function emailDeck() {
+  const title = deckData?.title || 'My Deck';
+  const subject = encodeURIComponent('DeckFlow: ' + title);
+  const body = encodeURIComponent('Hi,\n\nHere is my presentation: ' + title + '\n\nBuilt with DeckFlow.');
+  window.location.href = `mailto:?subject=${subject}&body=${body}`;
+}
+
+// ── Email Embed ──
+function emailHTML() {
+  if (!deckData) return;
+  const PAL_RAW = [
+    {bg:'#0f0c29',fg:'#ffffff',ac:'#ff3f3f',a2:'#ffb800'},
+    {bg:'#fff5e6',fg:'#1a0800',ac:'#ff6b00',a2:'#ff3f3f'},
+    {bg:'#051528',fg:'#ffffff',ac:'#3d8eff',a2:'#00e5a0'},
+    {bg:'#f3eeff',fg:'#1a0033',ac:'#7c3aed',a2:'#ff6ef7'},
+    {bg:'#071a14',fg:'#ffffff',ac:'#00e5a0',a2:'#ffb800'},
+    {bg:'#1a0518',fg:'#ffffff',ac:'#ff6ef7',a2:'#ff3f3f'},
+    {bg:'#fff8f0',fg:'#1a0800',ac:'#ff8c00',a2:'#3d8eff'},
+    {bg:'#050f22',fg:'#ffffff',ac:'#3d8eff',a2:'#ff6ef7'},
+  ];
+  const EP = i => PAL_RAW[i % PAL_RAW.length];
+
+  function card(s, i) {
+    const p = EP(i);
+    const wrap = inner => '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;margin:0 auto 20px auto;border-radius:16px;overflow:hidden;background:' + p.bg + '"><tr><td style="padding:40px 36px;font-family:Arial,sans-serif">' + inner + '</td></tr></table>';
+
+    if (s.type==='cover') return wrap(
+      '<p style="margin:0 0 10px;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:' + p.ac + ';font-family:Arial,sans-serif">' + (s.tag||'PRESENTATION') + '</p>' +
+      '<h1 style="margin:0 0 14px;font-size:36px;font-weight:900;line-height:1.05;color:' + p.fg + ';font-family:Arial,sans-serif">' + s.title + '</h1>' +
+      '<p style="margin:0;font-size:16px;font-style:italic;color:' + p.fg + ';opacity:0.7;font-family:Georgia,serif">' + (s.subtitle||deckData.tagline||'') + '</p>' +
+      '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px"><tr><td style="height:4px;background:' + p.ac + ';border-radius:2px"></td></tr></table>');
+
+    if (s.type==='content') {
+      const pts = (s.points||[]).map(pt =>
+        '<tr><td style="padding:6px 0"><table cellpadding="0" cellspacing="0" border="0"><tr>' +
+        '<td style="width:10px;padding-top:7px;vertical-align:top"><div style="width:7px;height:7px;border-radius:50%;background:' + p.ac + '"></div></td>' +
+        '<td style="padding-left:10px;font-size:15px;line-height:1.6;color:' + p.fg + ';font-family:Arial,sans-serif">' + pt + '</td>' +
+        '</tr></table></td></tr>').join('');
+      return wrap(
+        (s.eyebrow ? '<p style="margin:0 0 8px;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:' + p.ac + ';font-family:Arial,sans-serif">' + s.eyebrow + '</p>' : '') +
+        '<h2 style="margin:0 0 20px;font-size:26px;font-weight:900;line-height:1.05;color:' + p.fg + ';font-family:Arial,sans-serif">' + s.heading + '</h2>' +
+        '<table width="100%" cellpadding="0" cellspacing="0" border="0">' + pts + '</table>');
+    }
+
+    if (s.type==='stat') return wrap(
+      '<p style="margin:0 0 8px;font-size:11px;letter-spacing:4px;text-transform:uppercase;color:' + p.ac + ';text-align:center;font-family:Arial,sans-serif">' + (s.label||'') + '</p>' +
+      '<p style="margin:0 0 12px;font-size:72px;font-weight:900;line-height:1;color:' + p.ac + ';text-align:center;font-family:Arial,sans-serif">' + (s.number||'') + '</p>' +
+      '<p style="margin:0;font-size:15px;font-style:italic;color:' + p.fg + ';text-align:center;font-family:Georgia,serif">' + (s.body||'') + '</p>');
+
+    if (s.type==='split') return wrap(
+      '<h2 style="margin:0 0 20px;font-size:24px;font-weight:900;color:' + p.fg + ';font-family:Arial,sans-serif;border-bottom:2px solid ' + p.ac + ';padding-bottom:12px">' + s.heading + '</h2>' +
+      '<table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>' +
+      '<td width="48%" style="vertical-align:top;padding-right:12px"><p style="margin:0 0 6px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:' + p.ac + ';font-family:Arial,sans-serif">' + (s.left&&s.left.label||'') + '</p><p style="margin:0;font-size:14px;line-height:1.6;color:' + p.fg + ';font-family:Arial,sans-serif">' + (s.left&&s.left.text||'') + '</p></td>' +
+      '<td width="4%"></td>' +
+      '<td width="48%" style="vertical-align:top;padding-left:12px"><p style="margin:0 0 6px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:' + p.a2 + ';font-family:Arial,sans-serif">' + (s.right&&s.right.label||'') + '</p><p style="margin:0;font-size:14px;line-height:1.6;color:' + p.fg + ';font-family:Arial,sans-serif">' + (s.right&&s.right.text||'') + '</p></td>' +
+      '</tr></table>');
+
+    if (s.type==='quote') return wrap(
+      '<p style="margin:0 0 10px;font-size:60px;line-height:0.5;color:' + p.ac + ';font-family:Georgia,serif;opacity:0.4">"</p>' +
+      '<p style="margin:0 0 16px;font-size:20px;font-style:italic;line-height:1.45;color:' + p.fg + ';text-align:center;font-family:Georgia,serif">"' + s.text + '"</p>' +
+      '<p style="margin:0;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:' + p.ac + ';text-align:center;font-family:Arial,sans-serif">— ' + (s.attr||'') + '</p>');
+
+    if (s.type==='image') {
+      const img = uploadedImages[s.image_index];
+      return wrap(
+        (img ? '<img src="' + img.dataUrl + '" width="100%" style="display:block;border-radius:10px;margin-bottom:14px" alt="">' : '') +
+        (s.label ? '<p style="margin:0 0 6px;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:' + p.ac + ';font-family:Arial,sans-serif">' + s.label + '</p>' : '') +
+        '<p style="margin:0;font-size:15px;line-height:1.6;color:' + p.fg + ';font-family:Arial,sans-serif">' + (s.caption||'') + '</p>');
+    }
+
+    if (s.type==='dual_image') {
+      const imgL = uploadedImages[s.image_index_left];
+      const imgR = uploadedImages[s.image_index_right];
+      return wrap(
+        '<h2 style="margin:0 0 16px;font-size:24px;font-weight:900;color:' + p.fg + ';font-family:Arial,sans-serif">' + (s.heading||'') + '</h2>' +
+        '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:14px"><tr>' +
+        '<td width="49%" style="padding-right:6px">' + (imgL ? '<img src="' + imgL.dataUrl + '" width="100%" style="display:block;border-radius:8px" alt="">' : '') + '</td>' +
+        '<td width="49%" style="padding-left:6px">' + (imgR ? '<img src="' + imgR.dataUrl + '" width="100%" style="display:block;border-radius:8px" alt="">' : '') + '</td>' +
+        '</tr></table>' +
+        '<p style="margin:0;font-size:14px;line-height:1.6;color:' + p.fg + ';font-family:Arial,sans-serif">' + (s.text||'') + '</p>');
+    }
+
+    if (s.type==='closing') return wrap(
+      '<h1 style="margin:0 0 14px;font-size:40px;font-weight:900;line-height:1;color:' + p.fg + ';text-align:center;font-family:Arial,sans-serif">' + s.title + '</h1>' +
+      '<p style="margin:0 0 24px;font-size:16px;font-style:italic;color:' + p.fg + ';text-align:center;opacity:0.6;font-family:Georgia,serif">' + (s.subtitle||'') + '</p>' +
+      '<table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto"><tr><td style="background:' + p.ac + ';border-radius:40px;padding:12px 32px"><p style="margin:0;font-size:14px;font-weight:700;color:' + p.bg + ';font-family:Arial,sans-serif">' + (s.cta||"Let's Go") + '</p></td></tr></table>');
+
+    return '';
+  }
+
+  const cards = deckData.slides.map((s,i) => card(s,i)).join('');
+  const emailBody = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:20px;background:#0c0c10">' + cards + '</body></html>';
+
+  const blob = new Blob([emailBody], {type:'text/html'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (deckData.title||'deck').toLowerCase().replace(/[^a-z0-9]+/g,'-') + '-email.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('Open the file in Chrome, Select All, Copy, Paste into Gmail compose');
 }
 
 // ── Export PDF via print ──
