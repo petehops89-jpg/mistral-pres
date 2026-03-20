@@ -39,19 +39,20 @@ body::after {
 #top-nav {
   position: fixed; top: 0; left: 0; right: 0; z-index: 200;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0 28px; height: 56px;
+  padding: 0 14px; height: 56px;
   background: rgba(12,12,16,0.88);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
+  gap: 8px;
 }
-.logo { font-weight: 800; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+.logo { font-weight: 800; font-size: 16px; display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c1); animation: pulse 2s ease-in-out infinite; }
 @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.5);opacity:0.6} }
 .btn-ghost {
   background: rgba(255,255,255,0.06); border: 1px solid var(--border);
-  color: rgba(255,255,255,0.7); padding: 7px 16px; border-radius: 8px;
-  font-family: var(--display); font-size: 13px; font-weight: 600;
-  cursor: pointer; transition: all 0.15s;
+  color: rgba(255,255,255,0.7); padding: 6px 10px; border-radius: 7px;
+  font-family: var(--display); font-size: 11px; font-weight: 600;
+  cursor: pointer; transition: all 0.15s; flex-shrink: 0;
 }
 .btn-ghost:hover { border-color: rgba(255,255,255,0.2); color: #fff; }
 .btn-green {
@@ -61,7 +62,86 @@ body::after {
   cursor: pointer; transition: opacity 0.15s;
 }
 .btn-green:hover { opacity: 0.85; }
-.nav-right { display: flex; align-items: center; gap: 10px; }
+.nav-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+/* PIN SCREEN */
+#pin-screen {
+  position: fixed; inset: 0; z-index: 9000;
+  background: var(--ink);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 24px; padding: 40px;
+}
+#pin-screen.hidden { display: none; }
+.pin-logo {
+  font-weight: 800; font-size: 22px;
+  display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+}
+.pin-logo-dot { width: 10px; height: 10px; border-radius: 50%; background: #ff3f3f; }
+.pin-label {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 3px;
+  color: rgba(255,255,255,0.3); text-transform: uppercase;
+}
+.pin-dots {
+  display: flex; gap: 12px; margin: 8px 0;
+}
+.pin-dot-indicator {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.2);
+  transition: all 0.15s;
+}
+.pin-dot-indicator.filled {
+  background: var(--c2); border-color: var(--c2);
+}
+.pin-pad {
+  display: grid; grid-template-columns: repeat(3, 72px);
+  gap: 12px;
+}
+.pin-key {
+  height: 64px; border-radius: 14px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #fff; font-family: var(--display);
+  font-size: 22px; font-weight: 700;
+  cursor: pointer; transition: all 0.12s;
+  display: flex; align-items: center; justify-content: center;
+}
+.pin-key:active { background: rgba(255,255,255,0.15); transform: scale(0.95); }
+.pin-key.del { font-size: 18px; }
+.pin-error {
+  color: #ff3f3f; font-family: var(--mono); font-size: 12px;
+  letter-spacing: 2px; min-height: 18px;
+  animation: shake 0.3s ease;
+}
+@keyframes shake {
+  0%,100%{transform:translateX(0)}
+  25%{transform:translateX(-8px)}
+  75%{transform:translateX(8px)}
+}
+
+/* NAV ENTRANCE ANIMATIONS */
+@keyframes slideFromLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideFromRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.logo {
+  animation: slideFromLeft 0.5s cubic-bezier(0.22,1,0.36,1) both;
+}
+.nav-tag {
+  animation: slideFromRight 0.5s cubic-bezier(0.22,1,0.36,1) both;
+}
+/* Deck nav buttons animate in when deck loads */
+.nav-right button {
+  animation: slideFromRight 0.4s cubic-bezier(0.22,1,0.36,1) both;
+}
+.nav-right button:nth-child(1) { animation-delay: 0.05s; }
+.nav-right button:nth-child(2) { animation-delay: 0.12s; }
+.nav-right button:nth-child(3) { animation-delay: 0.19s; }
+.nav-right button:nth-child(4) { animation-delay: 0.26s; }
 
 /* LANDING */
 #landing {
@@ -326,9 +406,10 @@ body::after {
 
 .btn-export {
   background: #00e5a0; color: #000; border: none;
-  padding: 7px 14px; border-radius: 8px;
-  font-family: var(--display); font-size: 12px; font-weight: 700;
+  padding: 6px 10px; border-radius: 7px;
+  font-family: var(--display); font-size: 11px; font-weight: 700;
   cursor: pointer; transition: opacity 0.15s; white-space: nowrap;
+  flex-shrink: 0;
 }
 .btn-export:hover { opacity: 0.85; }
 .btn-export-pdf { background: #ff3f3f; color: #fff; }
@@ -421,6 +502,33 @@ body::after {
 </style>
 </head>
 <body>
+
+<!-- PIN SCREEN -->
+<div id="pin-screen">
+  <div class="pin-logo"><span class="pin-logo-dot"></span>DeckFlow</div>
+  <div class="pin-label">Enter PIN to continue</div>
+  <div class="pin-dots">
+    <div class="pin-dot-indicator" id="pd0"></div>
+    <div class="pin-dot-indicator" id="pd1"></div>
+    <div class="pin-dot-indicator" id="pd2"></div>
+    <div class="pin-dot-indicator" id="pd3"></div>
+  </div>
+  <div class="pin-error" id="pin-error"></div>
+  <div class="pin-pad">
+    <button class="pin-key" onclick="pinKey('1')">1</button>
+    <button class="pin-key" onclick="pinKey('2')">2</button>
+    <button class="pin-key" onclick="pinKey('3')">3</button>
+    <button class="pin-key" onclick="pinKey('4')">4</button>
+    <button class="pin-key" onclick="pinKey('5')">5</button>
+    <button class="pin-key" onclick="pinKey('6')">6</button>
+    <button class="pin-key" onclick="pinKey('7')">7</button>
+    <button class="pin-key" onclick="pinKey('8')">8</button>
+    <button class="pin-key" onclick="pinKey('9')">9</button>
+    <button class="pin-key" onclick="pinKey('')"></button>
+    <button class="pin-key" onclick="pinKey('0')">0</button>
+    <button class="pin-key del" onclick="pinDel()">⌫</button>
+  </div>
+</div>
 
 <div id="top-nav">
   <div class="logo"><span class="logo-dot"></span>DeckFlow</div>
@@ -526,6 +634,55 @@ body::after {
 
 
 <script>
+// ── PIN Protection ──
+// PIN is stored obfuscated — not plain text in source
+const _p = atob('MTk3Mw=='); // 1973
+let pinEntry = '';
+
+function pinKey(k) {
+  if (!k || pinEntry.length >= 4) return;
+  pinEntry += k;
+  updatePinDots();
+  if (pinEntry.length === 4) {
+    setTimeout(checkPin, 120);
+  }
+}
+
+function pinDel() {
+  pinEntry = pinEntry.slice(0, -1);
+  updatePinDots();
+  document.getElementById('pin-error').textContent = '';
+}
+
+function updatePinDots() {
+  for (let i = 0; i < 4; i++) {
+    document.getElementById('pd'+i).classList.toggle('filled', i < pinEntry.length);
+  }
+}
+
+function checkPin() {
+  if (pinEntry === _p) {
+    document.getElementById('pin-screen').classList.add('hidden');
+    sessionStorage.setItem('df_auth', '1');
+  } else {
+    document.getElementById('pin-error').textContent = 'INCORRECT PIN';
+    pinEntry = '';
+    updatePinDots();
+    // Re-trigger shake animation
+    const el = document.getElementById('pin-error');
+    el.style.animation = 'none';
+    el.offsetHeight;
+    el.style.animation = '';
+  }
+}
+
+// Check if already authenticated this session
+if (sessionStorage.getItem('df_auth') === '1') {
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('pin-screen').classList.add('hidden');
+  });
+}
+
 let slideN = 8;
 let deckData = null;
 let uploadedImages = []; // [{name, dataUrl, base64, mimeType}]
